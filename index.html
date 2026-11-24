@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MobileConfig Unsigner & Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+          colors: {
+            macos: {
+              blue: '#007AFF',
+              blueHover: '#0062CC',
+              darkBg: '#0F1115',
+              darkCard: '#181B20',
+              darkBorder: '#2A2F3A'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.55); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-macos-darkBg dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-30 backdrop-blur-md bg-white/85 dark:bg-macos-darkCard/85 border-b border-slate-200/80 dark:border-macos-darkBorder">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- Brand Identity -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-semibold tracking-tight leading-tight">MobileConfig Unsigner & Studio</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Strip PKCS#7 / CMS signatures & inspect Apple configuration profiles locally</p>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button id="btn-load-blank" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition">
+          <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span>New Blank Template</span>
+        </button>
+
+        <button id="btn-clear" type="button" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/50 text-slate-700 hover:text-rose-600 dark:text-slate-200 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 transition">
+          <span>Clear</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="btn-theme-toggle" type="button" aria-label="Toggle dark mode" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition">
+          <svg id="icon-sun" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+          </svg>
+          <svg id="icon-moon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Upload Dropzone & Signature Status Banner -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Drag & Drop File Upload -->
+      <div id="dropzone" class="lg:col-span-2 relative group rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-macos-blue dark:hover:border-macos-blue bg-white dark:bg-macos-darkCard p-5 transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-4">
+        <input id="file-input" type="file" accept=".mobileconfig,.plist,.xml,application/x-apple-aspen-config" class="hidden" />
+        <div class="flex items-center gap-4 text-center sm:text-left">
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-macos-blue flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">Drop your signed or unsigned <code class="font-mono text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">.mobileconfig</code> file here</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">100% client-side processing — your certificates and profile payloads never leave your browser.</p>
+          </div>
+        </div>
+        <button type="button" id="btn-browse" class="shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-macos-blue hover:bg-macos-blueHover text-white shadow-sm transition">
+          Select File
+        </button>
+      </div>
+
+      <!-- Signature & Extraction Status Card -->
+      <div class="rounded-2xl bg-white dark:bg-macos-darkCard border border-slate-200/80 dark:border-macos-darkBorder p-5 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Profile Status</span>
+          <span id="badge-signature" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+            Awaiting File
+          </span>
+        </div>
+        <div class="mt-3 space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-slate-500 dark:text-slate-400">Source File:</span>
+            <span id="meta-filename" class="font-mono font-medium truncate max-w-[180px] text-slate-400">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500 dark:text-slate-400">CMS Envelope:</span>
+            <span id="meta-cms" class="font-medium text-slate-400">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500 dark:text-slate-400">XML Validation:</span>
+            <span id="meta-valid" class="font-medium text-slate-400">—</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Empty State Placeholder (Shown before a file or template is loaded) -->
+    <section id="empty-state" class="rounded-2xl bg-white dark:bg-macos-darkCard border border-slate-200/80 dark:border-macos-darkBorder p-10 sm:p-14 text-center shadow-sm">
+      <div class="max-w-md mx-auto space-y-4">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 flex items-center justify-center">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+        </div>
+        <h2 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">No Configuration Profile Loaded</h2>
+        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+          Upload a signed or unsigned <code class="font-mono text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">.mobileconfig</code> file above to strip its cryptographic signature and inspect its contents, or start from a clean generic boilerplate.
+        </p>
+        <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
+          <button type="button" id="btn-empty-upload" class="px-4 py-2 rounded-xl text-xs font-semibold bg-macos-blue hover:bg-macos-blueHover text-white shadow-sm transition">
+            Upload .mobileconfig File
+          </button>
+          <button type="button" id="btn-empty-blank" class="px-4 py-2 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition">
+            Start with Blank Boilerplate
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Two-Column Split: Left = Interactive Form Editor, Right = Live XML Preview (Hidden until loaded) -->
+    <section id="workspace-grid" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- LEFT COLUMN: Interactive Payload Editor (5 cols on lg) -->
+      <div class="lg:col-span-5 space-y-5">
+        <!-- General Profile Metadata Card -->
+        <div class="rounded-2xl bg-white dark:bg-macos-darkCard border border-slate-200/80 dark:border-macos-darkBorder shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-200/80 dark:border-macos-darkBorder flex items-center justify-between">
+            <h2 class="text-sm font-semibold">General Profile Settings</h2>
+            <button id="btn-regen-uuid" type="button" class="text-xs font-medium text-macos-blue hover:underline flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              New UUIDs
+            </button>
+          </div>
+
+          <div class="p-5 space-y-4 text-sm">
+            <div>
+              <label for="field-display-name" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">PayloadDisplayName</label>
+              <input id="field-display-name" type="text" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition" />
+            </div>
+
+            <div>
+              <label for="field-organization" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">PayloadOrganization</label>
+              <input id="field-organization" type="text" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition" />
+            </div>
+
+            <div>
+              <label for="field-description" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">PayloadDescription</label>
+              <input id="field-description" type="text" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="field-scope" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">PayloadScope</label>
+                <select id="field-scope" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition">
+                  <option value="System">System</option>
+                  <option value="User">User</option>
+                </select>
+              </div>
+              <div>
+                <label for="field-uuid" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Root PayloadUUID</label>
+                <input id="field-uuid" type="text" class="w-full px-3 py-2 rounded-xl font-mono text-xs bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition" />
+              </div>
+            </div>
+
+            <!-- Removal Disallowed Toggle -->
+            <div class="pt-2 flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+              <div>
+                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">Prevent Manual Removal</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><code class="font-mono">PayloadRemovalDisallowed</code> (set false for easy local uninstall)</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input id="field-removal-disallowed" type="checkbox" class="sr-only peer" />
+                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-macos-blue"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- VPN / App-Proxy Payload Settings Card (Shown if VPN payload exists) -->
+        <div id="vpn-payload-card" class="rounded-2xl bg-white dark:bg-macos-darkCard border border-slate-200/80 dark:border-macos-darkBorder shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-200/80 dark:border-macos-darkBorder flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+              <h2 class="text-sm font-semibold">VPN / App-Proxy Payload</h2>
+            </div>
+            <span id="vpn-subtype-badge" class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">app-proxy</span>
+          </div>
+
+          <div id="vpn-fields-body" class="p-5 space-y-4 text-sm">
+            <div>
+              <label for="field-vpn-name" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">UserDefinedName</label>
+              <input id="field-vpn-name" type="text" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="field-remote-address" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">RemoteAddress</label>
+                <input id="field-remote-address" type="text" class="w-full px-3 py-2 rounded-xl font-mono text-xs bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition" />
+              </div>
+              <div>
+                <label for="field-bundle-id" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">ProviderBundleIdentifier</label>
+                <input id="field-bundle-id" type="text" class="w-full px-3 py-2 rounded-xl font-mono text-xs bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition" />
+              </div>
+            </div>
+
+            <div>
+              <label for="field-designated-req" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">ProviderDesignatedRequirement</label>
+              <textarea id="field-designated-req" rows="2" class="w-full px-3 py-2 rounded-xl font-mono text-xs bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-macos-blue/40 focus:border-macos-blue transition"></textarea>
+            </div>
+
+            <div class="pt-1 flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+              <div>
+                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">IncludeAllNetworks</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Route all system traffic through tunnel</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input id="field-include-all" type="checkbox" class="sr-only peer" />
+                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-macos-blue"></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Fallback Notice when custom/non-VPN mobileconfig is uploaded -->
+          <div id="non-vpn-notice" class="hidden p-5 text-xs text-slate-500 dark:text-slate-400">
+            Payload type: <code id="custom-payload-type" class="font-mono text-slate-700 dark:text-slate-300"></code>. Top-level metadata fields above remain editable, and you can edit the raw XML directly on the right.
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Unsigned XML Output & Export (7 cols on lg) -->
+      <div class="lg:col-span-7 rounded-2xl bg-white dark:bg-macos-darkCard border border-slate-200/80 dark:border-macos-darkBorder shadow-sm overflow-hidden flex flex-col">
+        <!-- Toolbar -->
+        <div class="px-4 sm:px-5 py-3 border-b border-slate-200/80 dark:border-macos-darkBorder flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-900/40">
+          <!-- Mode Tabs -->
+          <div class="inline-flex rounded-xl bg-slate-200/70 dark:bg-slate-800 p-1 text-xs font-medium">
+            <button id="tab-preview" type="button" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition">
+              Formatted XML
+            </button>
+            <button id="tab-raw" type="button" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+              Raw Editor
+            </button>
+          </div>
+
+          <!-- Export Action Buttons -->
+          <div class="flex items-center gap-2">
+            <button id="btn-format-xml" type="button" title="Pretty-print XML" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition">
+              Format XML
+            </button>
+            <button id="btn-copy-xml" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+              </svg>
+              <span>Copy</span>
+            </button>
+            <button id="btn-download" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-macos-blue hover:bg-macos-blueHover text-white shadow-sm transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              <span>Download Unsigned .mobileconfig</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Syntax-Highlighted Read View -->
+        <div id="view-preview" class="relative max-h-[560px] overflow-auto p-4 sm:p-5 bg-slate-950 text-slate-100 font-mono text-xs leading-relaxed">
+          <pre id="xml-highlighted-output" class="whitespace-pre overflow-x-auto"></pre>
+        </div>
+
+        <!-- Raw Editable Textarea View -->
+        <div id="view-raw" class="hidden relative">
+          <textarea id="xml-raw-editor" spellcheck="false" class="w-full h-[560px] p-4 sm:p-5 bg-slate-950 text-emerald-300 font-mono text-xs leading-relaxed focus:outline-none resize-y"></textarea>
+        </div>
+
+        <!-- Footer Helper Bar -->
+        <div class="px-5 py-3 border-t border-slate-200/80 dark:border-macos-darkBorder bg-slate-50/70 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+          <span>macOS CLI equivalent: <code class="font-mono text-slate-700 dark:text-slate-300">security cms -D -i signed.mobileconfig -o unsigned.mobileconfig</code></span>
+          <span id="char-count" class="font-mono">0 bytes</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /**
+     * MobileConfig Studio — Client-Side CMS Signature Stripper & Plist Editor
+     * Runs 100% locally in the browser with zero external runtime build dependencies.
+     */
+    (function () {
+      'use strict';
+
+      /**
+       * Generate standard RFC4122 uppercase UUID v4
+       */
+      function generateUUID() {
+        if (crypto && crypto.randomUUID) {
+          return crypto.randomUUID().toUpperCase();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16).toUpperCase();
+        });
+      }
+
+      /**
+       * Build a clean, generic Apple Configuration Profile boilerplate
+       */
+      function createBlankBoilerplateXml() {
+        const rootUuid = generateUUID();
+        return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array/>
+	<key>PayloadDescription</key>
+	<string></string>
+	<key>PayloadDisplayName</key>
+	<string>Untitled Configuration Profile</string>
+	<key>PayloadIdentifier</key>
+	<string>com.example.profile.${rootUuid}</string>
+	<key>PayloadOrganization</key>
+	<string></string>
+	<key>PayloadRemovalDisallowed</key>
+	<false/>
+	<key>PayloadScope</key>
+	<string>System</string>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>${rootUuid}</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>`;
+      }
+
+      // Application State (Starts completely empty)
+      const state = {
+        hasLoadedProfile: false,
+        xmlText: '',
+        fileName: '',
+        wasSigned: false,
+        activeTab: 'preview',
+        isValidXml: true
+      };
+
+      // DOM References
+      const els = {
+        dropzone: document.getElementById('dropzone'),
+        fileInput: document.getElementById('file-input'),
+        btnBrowse: document.getElementById('btn-browse'),
+        btnLoadBlank: document.getElementById('btn-load-blank'),
+        btnClear: document.getElementById('btn-clear'),
+        btnEmptyUpload: document.getElementById('btn-empty-upload'),
+        btnEmptyBlank: document.getElementById('btn-empty-blank'),
+        emptyState: document.getElementById('empty-state'),
+        workspaceGrid: document.getElementById('workspace-grid'),
+        btnThemeToggle: document.getElementById('btn-theme-toggle'),
+        btnRegenUuid: document.getElementById('btn-regen-uuid'),
+        btnFormatXml: document.getElementById('btn-format-xml'),
+        btnCopyXml: document.getElementById('btn-copy-xml'),
+        btnDownload: document.getElementById('btn-download'),
+        badgeSignature: document.getElementById('badge-signature'),
+        metaFilename: document.getElementById('meta-filename'),
+        metaCms: document.getElementById('meta-cms'),
+        metaValid: document.getElementById('meta-valid'),
+        // Form fields
+        fieldDisplayName: document.getElementById('field-display-name'),
+        fieldOrganization: document.getElementById('field-organization'),
+        fieldDescription: document.getElementById('field-description'),
+        fieldScope: document.getElementById('field-scope'),
+        fieldUuid: document.getElementById('field-uuid'),
+        fieldRemovalDisallowed: document.getElementById('field-removal-disallowed'),
+        // VPN fields
+        vpnPayloadCard: document.getElementById('vpn-payload-card'),
+        vpnFieldsBody: document.getElementById('vpn-fields-body'),
+        nonVpnNotice: document.getElementById('non-vpn-notice'),
+        customPayloadType: document.getElementById('custom-payload-type'),
+        vpnSubtypeBadge: document.getElementById('vpn-subtype-badge'),
+        fieldVpnName: document.getElementById('field-vpn-name'),
+        fieldRemoteAddress: document.getElementById('field-remote-address'),
+        fieldBundleId: document.getElementById('field-bundle-id'),
+        fieldDesignatedReq: document.getElementById('field-designated-req'),
+        fieldIncludeAll: document.getElementById('field-include-all'),
+        // Tabs & XML views
+        tabPreview: document.getElementById('tab-preview'),
+        tabRaw: document.getElementById('tab-raw'),
+        viewPreview: document.getElementById('view-preview'),
+        viewRaw: document.getElementById('view-raw'),
+        xmlHighlightedOutput: document.getElementById('xml-highlighted-output'),
+        xmlRawEditor: document.getElementById('xml-raw-editor'),
+        charCount: document.getElementById('char-count')
+      };
+
+      /**
+       * Show non-blocking Toast Message
+       */
+      function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const colors = {
+          success: 'bg-emerald-600 text-white',
+          error: 'bg-rose-600 text-white',
+          info: 'bg-slate-900 dark:bg-slate-800 text-white border border-slate-700'
+        };
+        toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => {
+          toast.classList.remove('translate-y-2', 'opacity-0');
+        });
+
+        setTimeout(() => {
+          toast.classList.add('translate-y-2', 'opacity-0');
+          setTimeout(() => toast.remove(), 300);
+        }, 3200);
+      }
+
+      /**
+       * Initialize Dark / Light Theme
+       */
+      function initTheme() {
+        const saved = localStorage.getItem('mobileconfig-theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      }
+
+      /**
+       * Extract clean XML plist from a signed (PKCS#7/CMS) or unsigned ArrayBuffer
+       */
+      function extractXmlFromMobileConfig(arrayBuffer) {
+        const bytes = new Uint8Array(arrayBuffer);
+        const xmlStartNeedle = [0x3c, 0x3f, 0x78, 0x6d, 0x6c]; // "<?xml"
+        const plistEndNeedle = [0x3c, 0x2f, 0x70, 0x6c, 0x69, 0x73, 0x74, 0x3e]; // "</plist>"
+
+        function findSubarray(haystack, needle, fromIndex = 0) {
+          outer: for (let i = fromIndex; i <= haystack.length - needle.length; i++) {
+            for (let j = 0; j < needle.length; j++) {
+              if (haystack[i + j] !== needle[j]) continue outer;
+            }
+            return i;
+          }
+          return -1;
+        }
+
+        const startIdx = findSubarray(bytes, xmlStartNeedle, 0);
+        if (startIdx === -1) {
+          throw new Error('No XML property list header (<?xml) found in this file.');
+        }
+
+        let endIdx = -1;
+        let searchPos = startIdx;
+        while (searchPos < bytes.length) {
+          const found = findSubarray(bytes, plistEndNeedle, searchPos);
+          if (found === -1) break;
+          endIdx = found + plistEndNeedle.length;
+          searchPos = found + 1;
+        }
+
+        if (endIdx === -1) {
+          throw new Error('Could not locate closing </plist> tag in this file.');
+        }
+
+        const wasSigned = startIdx > 0 || endIdx < bytes.length;
+        const xmlSlice = bytes.slice(startIdx, endIdx);
+
+        // Strip DER ASN.1 OCTET STRING chunking boundaries if present
+        const cleanedBytes = [];
+        for (let i = 0; i < xmlSlice.length; i++) {
+          const b = xmlSlice[i];
+          if (b === 0x04 && i + 1 < xmlSlice.length) {
+            const lenByte = xmlSlice[i + 1];
+            if (lenByte === 0x82 && i + 3 < xmlSlice.length) {
+              i += 3;
+              continue;
+            } else if (lenByte === 0x81 && i + 2 < xmlSlice.length) {
+              i += 2;
+              continue;
+            } else if (lenByte < 0x80 && i + 2 < xmlSlice.length && xmlSlice[i + 2] === 0x3c) {
+              i += 1;
+              continue;
+            }
+          }
+          cleanedBytes.push(b);
+        }
+
+        const decoder = new TextDecoder('utf-8', { fatal: false });
+        let extractedXml = decoder.decode(new Uint8Array(cleanedBytes));
+        extractedXml = extractedXml.replace(/\uFFFD/g, '').trim();
+
+        return { xml: extractedXml, wasSigned };
+      }
+
+      /**
+       * Pretty-print XML string with clean tab indentation
+       */
+      function formatPlistXml(xmlString) {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(xmlString, 'application/xml');
+          if (doc.querySelector('parsererror')) {
+            return xmlString;
+          }
+
+          const lines = [];
+          const headerMatch = xmlString.match(/<\?xml[^?]*\?>/i);
+          lines.push(headerMatch ? headerMatch[0] : '<?xml version="1.0" encoding="UTF-8"?>');
+
+          const doctypeMatch = xmlString.match(/<!DOCTYPE[^>]*>/i);
+          lines.push(
+            doctypeMatch
+              ? doctypeMatch[0]
+              : '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
+          );
+
+          function serializeNode(node, depth) {
+            const indent = '\t'.repeat(depth);
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const tagName = node.tagName;
+              let attrs = '';
+              for (const attr of node.attributes) {
+                attrs += ` ${attr.name}="${attr.value}"`;
+              }
+
+              const elementChildren = Array.from(node.childNodes).filter(
+                (n) => n.nodeType === Node.ELEMENT_NODE
+              );
+              const textContent = node.textContent;
+
+              if (elementChildren.length === 0) {
+                if (!textContent || textContent.length === 0) {
+                  lines.push(`${indent}<${tagName}${attrs}/>`);
+                } else {
+                  const escaped = textContent
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                  lines.push(`${indent}<${tagName}${attrs}>${escaped}</${tagName}>`);
+                }
+              } else {
+                lines.push(`${indent}<${tagName}${attrs}>`);
+                for (const child of elementChildren) {
+                  serializeNode(child, depth + 1);
+                }
+                lines.push(`${indent}</${tagName}>`);
+              }
+            }
+          }
+
+          serializeNode(doc.documentElement, 0);
+          return lines.join('\n');
+        } catch (err) {
+          return xmlString;
+        }
+      }
+
+      /**
+       * Helper: Find value element immediately following a <key> inside a <dict>
+       */
+      function getPlistDictValueElement(dictEl, keyName) {
+        if (!dictEl) return null;
+        const children = Array.from(dictEl.children);
+        for (let i = 0; i < children.length; i++) {
+          if (children[i].tagName === 'key' && children[i].textContent.trim() === keyName) {
+            return children[i + 1] || null;
+          }
+        }
+        return null;
+      }
+
+      /**
+       * Helper: Set or create a key/value pair inside a <dict>
+       */
+      function setPlistDictValue(doc, dictEl, keyName, typeTag, value) {
+        if (!dictEl) return;
+        let valEl = getPlistDictValueElement(dictEl, keyName);
+
+        if (!valEl) {
+          const keyEl = doc.createElement('key');
+          keyEl.textContent = keyName;
+          dictEl.appendChild(keyEl);
+
+          if (typeTag === 'boolean') {
+            valEl = doc.createElement(value ? 'true' : 'false');
+          } else {
+            valEl = doc.createElement(typeTag);
+            valEl.textContent = String(value);
+          }
+          dictEl.appendChild(valEl);
+          return;
+        }
+
+        if (typeTag === 'boolean') {
+          const newBoolEl = doc.createElement(value ? 'true' : 'false');
+          dictEl.replaceChild(newBoolEl, valEl);
+        } else {
+          valEl.textContent = String(value);
+        }
+      }
+
+      /**
+       * Populate left-hand form inputs from state.xmlText
+       */
+      function syncXmlToForm() {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(state.xmlText, 'application/xml');
+        const hasError = Boolean(doc.querySelector('parsererror'));
+        state.isValidXml = !hasError;
+
+        if (hasError) {
+          els.metaValid.textContent = 'XML Syntax Warning';
+          els.metaValid.className = 'font-medium text-amber-500';
+          return;
+        }
+
+        els.metaValid.textContent = 'Valid Apple Plist';
+        els.metaValid.className = 'font-medium text-emerald-500';
+
+        const rootDict = doc.querySelector('plist > dict');
+        if (!rootDict) return;
+
+        const getStr = (dict, k) => {
+          const el = getPlistDictValueElement(dict, k);
+          return el ? el.textContent : '';
+        };
+        const getBool = (dict, k) => {
+          const el = getPlistDictValueElement(dict, k);
+          return el ? el.tagName === 'true' : false;
+        };
+
+        els.fieldDisplayName.value = getStr(rootDict, 'PayloadDisplayName');
+        els.fieldOrganization.value = getStr(rootDict, 'PayloadOrganization');
+        els.fieldDescription.value = getStr(rootDict, 'PayloadDescription');
+        els.fieldScope.value = getStr(rootDict, 'PayloadScope') || 'System';
+        els.fieldUuid.value = getStr(rootDict, 'PayloadUUID');
+        els.fieldRemovalDisallowed.checked = getBool(rootDict, 'PayloadRemovalDisallowed');
+
+        // Inspect first payload in PayloadContent array
+        const payloadArray = getPlistDictValueElement(rootDict, 'PayloadContent');
+        const firstPayloadDict = payloadArray ? payloadArray.querySelector('dict') : null;
+
+        if (firstPayloadDict) {
+          const payloadType = getStr(firstPayloadDict, 'PayloadType');
+          if (payloadType.includes('vpn')) {
+            els.vpnFieldsBody.classList.remove('hidden');
+            els.nonVpnNotice.classList.add('hidden');
+            els.fieldVpnName.value = getStr(firstPayloadDict, 'UserDefinedName');
+
+            const vpnSubDict = getPlistDictValueElement(firstPayloadDict, 'VPN');
+            if (vpnSubDict) {
+              els.vpnSubtypeBadge.textContent = getStr(vpnSubDict, 'ProviderType') || 'VPN';
+              els.fieldRemoteAddress.value = getStr(vpnSubDict, 'RemoteAddress');
+              els.fieldBundleId.value = getStr(vpnSubDict, 'ProviderBundleIdentifier');
+              els.fieldDesignatedReq.value = getStr(vpnSubDict, 'ProviderDesignatedRequirement');
+              const incAll = getStr(vpnSubDict, 'IncludeAllNetworks');
+              els.fieldIncludeAll.checked = incAll === '1' || incAll === 'true';
+            }
+          } else {
+            els.vpnFieldsBody.classList.add('hidden');
+            els.nonVpnNotice.classList.remove('hidden');
+            els.customPayloadType.textContent = payloadType || 'Unknown';
+          }
+        } else {
+          els.vpnFieldsBody.classList.add('hidden');
+          els.nonVpnNotice.classList.remove('hidden');
+          els.customPayloadType.textContent = 'Empty PayloadContent Array';
+        }
+      }
+
+      /**
+       * Apply form edits back into XML and re-render
+       */
+      function syncFormToXml() {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(state.xmlText, 'application/xml');
+        if (doc.querySelector('parsererror')) return;
+
+        const rootDict = doc.querySelector('plist > dict');
+        if (!rootDict) return;
+
+        setPlistDictValue(doc, rootDict, 'PayloadDisplayName', 'string', els.fieldDisplayName.value);
+        setPlistDictValue(doc, rootDict, 'PayloadOrganization', 'string', els.fieldOrganization.value);
+        setPlistDictValue(doc, rootDict, 'PayloadDescription', 'string', els.fieldDescription.value);
+        setPlistDictValue(doc, rootDict, 'PayloadScope', 'string', els.fieldScope.value);
+        setPlistDictValue(doc, rootDict, 'PayloadUUID', 'string', els.fieldUuid.value);
+        setPlistDictValue(doc, rootDict, 'PayloadIdentifier', 'string', els.fieldUuid.value);
+        setPlistDictValue(doc, rootDict, 'PayloadRemovalDisallowed', 'boolean', els.fieldRemovalDisallowed.checked);
+
+        const payloadArray = getPlistDictValueElement(rootDict, 'PayloadContent');
+        const firstPayloadDict = payloadArray ? payloadArray.querySelector('dict') : null;
+        if (firstPayloadDict && !els.vpnFieldsBody.classList.contains('hidden')) {
+          setPlistDictValue(doc, firstPayloadDict, 'UserDefinedName', 'string', els.fieldVpnName.value);
+          setPlistDictValue(doc, firstPayloadDict, 'PayloadOrganization', 'string', els.fieldOrganization.value);
+
+          const vpnSubDict = getPlistDictValueElement(firstPayloadDict, 'VPN');
+          if (vpnSubDict) {
+            setPlistDictValue(doc, vpnSubDict, 'RemoteAddress', 'string', els.fieldRemoteAddress.value);
+            setPlistDictValue(doc, vpnSubDict, 'ProviderBundleIdentifier', 'string', els.fieldBundleId.value);
+            setPlistDictValue(doc, vpnSubDict, 'ProviderDesignatedRequirement', 'string', els.fieldDesignatedReq.value);
+            setPlistDictValue(doc, vpnSubDict, 'IncludeAllNetworks', 'integer', els.fieldIncludeAll.checked ? 1 : 0);
+          }
+          setPlistDictValue(doc, firstPayloadDict, 'VPNSubType', 'string', els.fieldBundleId.value);
+        }
+
+        const serializer = new XMLSerializer();
+        const rawSerialized = serializer.serializeToString(doc);
+        state.xmlText = formatPlistXml(rawSerialized);
+        renderXmlViews();
+      }
+
+      /**
+       * Syntax highlight XML safely for the formatted code viewer
+       */
+      function highlightXml(xml) {
+        const escaped = xml
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+
+        return escaped
+          .replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="text-slate-500 italic">$1</span>')
+          .replace(/(&lt;\?[\s\S]*?\?&gt;|&lt;!DOCTYPE[\s\S]*?&gt;)/g, '<span class="text-slate-400">$1</span>')
+          .replace(/(&lt;key&gt;)([\s\S]*?)(&lt;\/key&gt;)/g, '<span class="text-sky-400">$1</span><span class="text-amber-300 font-medium">$2</span><span class="text-sky-400">$3</span>')
+          .replace(/(&lt;string&gt;)([\s\S]*?)(&lt;\/string&gt;)/g, '<span class="text-sky-400">$1</span><span class="text-emerald-300">$2</span><span class="text-sky-400">$3</span>')
+          .replace(/(&lt;integer&gt;)([\s\S]*?)(&lt;\/integer&gt;)/g, '<span class="text-sky-400">$1</span><span class="text-purple-300">$2</span><span class="text-sky-400">$3</span>')
+          .replace(/(&lt;(?:true|false)\/&gt;)/g, '<span class="text-rose-400 font-medium">$1</span>')
+          .replace(/(&lt;\/?(?:plist|dict|array|string|key|integer|data|date|real)(?:\s[^&]*?)?\/?&gt;)/g, '<span class="text-sky-400">$1</span>');
+      }
+
+      /**
+       * Render XML into both Formatted View and Raw Textarea
+       */
+      function renderXmlViews() {
+        els.xmlHighlightedOutput.innerHTML = highlightXml(state.xmlText);
+        if (document.activeElement !== els.xmlRawEditor) {
+          els.xmlRawEditor.value = state.xmlText;
+        }
+        const byteSize = new Blob([state.xmlText]).size;
+        els.charCount.textContent = `${byteSize.toLocaleString()} bytes`;
+      }
+
+      /**
+       * Update Status Card UI and toggle empty vs workspace state
+       */
+      function updateStatusUI() {
+        if (!state.hasLoadedProfile) {
+          els.emptyState.classList.remove('hidden');
+          els.workspaceGrid.classList.add('hidden');
+          els.btnClear.classList.add('hidden');
+
+          els.badgeSignature.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+          els.badgeSignature.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Awaiting File';
+          els.metaFilename.textContent = '—';
+          els.metaFilename.className = 'font-mono font-medium truncate max-w-[180px] text-slate-400';
+          els.metaCms.textContent = '—';
+          els.metaCms.className = 'font-medium text-slate-400';
+          els.metaValid.textContent = '—';
+          els.metaValid.className = 'font-medium text-slate-400';
+          return;
+        }
+
+        els.emptyState.classList.add('hidden');
+        els.workspaceGrid.classList.remove('hidden');
+        els.btnClear.classList.remove('hidden');
+
+        els.metaFilename.textContent = state.fileName;
+        els.metaFilename.className = 'font-mono font-medium truncate max-w-[180px] text-slate-800 dark:text-slate-200';
+        els.metaCms.className = 'font-medium text-slate-700 dark:text-slate-300';
+
+        if (state.wasSigned) {
+          els.badgeSignature.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300';
+          els.badgeSignature.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Signature Stripped';
+          els.metaCms.textContent = 'PKCS#7 / CMS Removed';
+        } else {
+          els.badgeSignature.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300';
+          els.badgeSignature.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Unsigned XML';
+          els.metaCms.textContent = 'No CMS Wrapper Found';
+        }
+      }
+
+      /**
+       * Load a clean blank boilerplate profile
+       */
+      function loadBlankTemplate() {
+        state.hasLoadedProfile = true;
+        state.xmlText = createBlankBoilerplateXml();
+        state.fileName = 'untitled-profile.mobileconfig';
+        state.wasSigned = false;
+        updateStatusUI();
+        syncXmlToForm();
+        renderXmlViews();
+        showToast('Loaded blank .mobileconfig boilerplate', 'info');
+      }
+
+      /**
+       * Reset workspace back to empty state
+       */
+      function resetWorkspace() {
+        state.hasLoadedProfile = false;
+        state.xmlText = '';
+        state.fileName = '';
+        state.wasSigned = false;
+        els.xmlHighlightedOutput.innerHTML = '';
+        els.xmlRawEditor.value = '';
+        updateStatusUI();
+        showToast('Workspace cleared', 'info');
+      }
+
+      /**
+       * Handle File Upload (Input or Drag-and-Drop)
+       */
+      function handleFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            const { xml, wasSigned } = extractXmlFromMobileConfig(e.target.result);
+            state.hasLoadedProfile = true;
+            state.xmlText = formatPlistXml(xml);
+            state.fileName = file.name;
+            state.wasSigned = wasSigned;
+
+            updateStatusUI();
+            syncXmlToForm();
+            renderXmlViews();
+
+            showToast(
+              wasSigned
+                ? `Removed signature certificate from "${file.name}"`
+                : `Loaded unsigned profile "${file.name}"`,
+              'success'
+            );
+          } catch (err) {
+            showToast(err.message || 'Failed to parse .mobileconfig file.', 'error');
+          }
+        };
+        reader.onerror = function () {
+          showToast('Error reading file from disk.', 'error');
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      /**
+       * Bind all event listeners
+       */
+      function bindEvents() {
+        // Browse button & file input
+        els.btnBrowse.addEventListener('click', (e) => {
+          e.stopPropagation();
+          els.fileInput.click();
+        });
+        els.btnEmptyUpload.addEventListener('click', () => els.fileInput.click());
+        els.dropzone.addEventListener('click', () => els.fileInput.click());
+        els.fileInput.addEventListener('change', (e) => {
+          if (e.target.files && e.target.files[0]) {
+            handleFile(e.target.files[0]);
+            e.target.value = '';
+          }
+        });
+
+        // Drag and Drop events
+        ['dragenter', 'dragover'].forEach((evtName) => {
+          els.dropzone.addEventListener(evtName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            els.dropzone.classList.add('border-macos-blue', 'bg-blue-50/40', 'dark:bg-blue-950/20');
+          });
+        });
+
+        ['dragleave', 'drop'].forEach((evtName) => {
+          els.dropzone.addEventListener(evtName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            els.dropzone.classList.remove('border-macos-blue', 'bg-blue-50/40', 'dark:bg-blue-950/20');
+          });
+        });
+
+        els.dropzone.addEventListener('drop', (e) => {
+          const files = e.dataTransfer && e.dataTransfer.files;
+          if (files && files[0]) {
+            handleFile(files[0]);
+          }
+        });
+
+        // Load Blank Boilerplate & Clear Workspace
+        els.btnLoadBlank.addEventListener('click', loadBlankTemplate);
+        els.btnEmptyBlank.addEventListener('click', loadBlankTemplate);
+        els.btnClear.addEventListener('click', resetWorkspace);
+
+        // Form inputs -> Live XML updates
+        const formInputs = [
+          els.fieldDisplayName,
+          els.fieldOrganization,
+          els.fieldDescription,
+          els.fieldScope,
+          els.fieldUuid,
+          els.fieldRemovalDisallowed,
+          els.fieldVpnName,
+          els.fieldRemoteAddress,
+          els.fieldBundleId,
+          els.fieldDesignatedReq,
+          els.fieldIncludeAll
+        ];
+        formInputs.forEach((input) => {
+          input.addEventListener('input', syncFormToXml);
+          input.addEventListener('change', syncFormToXml);
+        });
+
+        // Regenerate UUIDs
+        els.btnRegenUuid.addEventListener('click', () => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(state.xmlText, 'application/xml');
+          if (doc.querySelector('parsererror')) return;
+
+          const rootDict = doc.querySelector('plist > dict');
+          const newRootUuid = generateUUID();
+          setPlistDictValue(doc, rootDict, 'PayloadUUID', 'string', newRootUuid);
+          setPlistDictValue(doc, rootDict, 'PayloadIdentifier', 'string', newRootUuid);
+
+          const payloadArray = getPlistDictValueElement(rootDict, 'PayloadContent');
+          if (payloadArray) {
+            payloadArray.querySelectorAll(':scope > dict').forEach((subDict) => {
+              const newSubUuid = generateUUID();
+              setPlistDictValue(doc, subDict, 'PayloadUUID', 'string', newSubUuid);
+              setPlistDictValue(doc, subDict, 'PayloadIdentifier', 'string', newSubUuid);
+              if (getPlistDictValueElement(subDict, 'VPNUUID')) {
+                setPlistDictValue(doc, subDict, 'VPNUUID', 'string', generateUUID().toLowerCase());
+              }
+            });
+          }
+
+          const serializer = new XMLSerializer();
+          state.xmlText = formatPlistXml(serializer.serializeToString(doc));
+          syncXmlToForm();
+          renderXmlViews();
+          showToast('Generated fresh UUIDs for profile & payloads', 'success');
+        });
+
+        // Switch Tabs (Formatted vs Raw Editor)
+        els.tabPreview.addEventListener('click', () => {
+          state.activeTab = 'preview';
+          els.tabPreview.className = 'px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition';
+          els.tabRaw.className = 'px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition';
+          els.viewPreview.classList.remove('hidden');
+          els.viewRaw.classList.add('hidden');
+          renderXmlViews();
+        });
+
+        els.tabRaw.addEventListener('click', () => {
+          state.activeTab = 'raw';
+          els.tabRaw.className = 'px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition';
+          els.tabPreview.className = 'px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition';
+          els.viewRaw.classList.remove('hidden');
+          els.viewPreview.classList.add('hidden');
+          els.xmlRawEditor.value = state.xmlText;
+        });
+
+        // Raw XML Editor -> Live sync back to form
+        els.xmlRawEditor.addEventListener('input', () => {
+          state.xmlText = els.xmlRawEditor.value;
+          syncXmlToForm();
+          els.xmlHighlightedOutput.innerHTML = highlightXml(state.xmlText);
+          els.charCount.textContent = `${new Blob([state.xmlText]).size.toLocaleString()} bytes`;
+        });
+
+        // Format XML button
+        els.btnFormatXml.addEventListener('click', () => {
+          state.xmlText = formatPlistXml(state.xmlText);
+          renderXmlViews();
+          syncXmlToForm();
+          showToast('Formatted XML property list', 'info');
+        });
+
+        // Copy to Clipboard
+        els.btnCopyXml.addEventListener('click', () => {
+          const tempTextarea = document.createElement('textarea');
+          tempTextarea.value = state.xmlText;
+          tempTextarea.style.position = 'fixed';
+          tempTextarea.style.opacity = '0';
+          document.body.appendChild(tempTextarea);
+          tempTextarea.select();
+          try {
+            document.execCommand('copy');
+            showToast('Unsigned XML copied to clipboard', 'success');
+          } catch (err) {
+            showToast('Failed to copy XML', 'error');
+          }
+          document.body.removeChild(tempTextarea);
+        });
+
+        // Download Unsigned .mobileconfig
+        els.btnDownload.addEventListener('click', () => {
+          const baseName = state.fileName.replace(/\.mobileconfig$/i, '');
+          const outName = baseName.endsWith('-unsigned')
+            ? `${baseName}.mobileconfig`
+            : `${baseName}-unsigned.mobileconfig`;
+
+          const blob = new Blob([state.xmlText], { type: 'application/x-apple-aspen-config;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = outName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast(`Downloaded "${outName}"`, 'success');
+        });
+
+        // Theme Toggle
+        els.btnThemeToggle.addEventListener('click', () => {
+          const isDark = document.documentElement.classList.toggle('dark');
+          localStorage.setItem('mobileconfig-theme', isDark ? 'dark' : 'light');
+        });
+      }
+
+      // Bootstrap App in Clean Empty State
+      initTheme();
+      bindEvents();
+      updateStatusUI();
+    })();
+  </script>
+</body>
+</html>
